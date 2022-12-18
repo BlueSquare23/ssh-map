@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# This script helps ennumerate ssh key networks. It does so by trying to log
+# This script helps enumerate ssh key networks. It does so by trying to log
 # into each of the hosts in the `ssh-hosts.txt` file as each of the users in
 # the `ssh-users.txt` file.
 
@@ -10,7 +10,7 @@ import json
 import time
 from paramiko import SSHClient, MissingHostKeyPolicy
 
-# Ammount of time b/w ssh connection attempts.
+# Amount of time b/w ssh connection attempts.
 delay_time = .5
 
 # Remote SSH Host Class.
