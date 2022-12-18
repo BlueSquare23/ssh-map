@@ -4,36 +4,42 @@
 # the `ssh-users.txt` file.
 
 import os
+import sys
 import socket
 import requests
 import json
 import time
+import getopt
 from paramiko import SSHClient, MissingHostKeyPolicy
-
-# Amount of time b/w ssh connection attempts.
-delay_time = .5
 
 # Remote SSH Host Class.
 class SshHost:
     def __init__(self):
         self.lhostname = ""
         self.rhostname = ""
-        self.lhost_pub_ip= ""
+        self.lhost_pub_ip = ""
         self.ssh_port = ""
         self.users = []
 
     def __str__(self):
-        str_repr = "###### SSH Host Obj ###### \n"
+        str_repr = "###### SSH Host Object ###### \n"
         str_repr += "Local Host: " + self.lhostname + "\n"
         str_repr += "Remote Host: " + self.rhostname + "\n"
         str_repr += "SSH Port: " + str(self.ssh_port) + "\n"
         str_repr += "Valid Users(s): " + str(self.users) + "\n"
+        str_repr += "Local Public IP: " + self.lhost_pub_ip + "\n"
         return str_repr
 
 # Make SshHost class JSON serializable.
 class SshHostEncoder(json.JSONEncoder):
     def default(self, o):
         return o.__dict__
+
+class Options:
+    def __init__(self):
+        self.pretty_print = ""
+        self.output_file = "ssh-map.json"
+        self.delay = .5
 
 # Makes sure file(s) exists and has contents.
 def check_for_file(filename):
@@ -46,6 +52,53 @@ def check_for_file(filename):
         exit(4)
 
     return
+
+def print_help():
+    print("""
+    Usage:
+
+           ssh-mapper.py [options]
+
+     -h                    print this help menu
+     -p                    print output as well
+     -o <file_name>        write to file, defaults to `ssh-map.json`
+     -d <delay>            delay seconds between ssh attempts
+
+    """)
+
+options = Options()
+
+try:
+    opts, args_rubbish = getopt.getopt(sys.argv[1:], "hpo:d:")
+except getopt.GetoptError as err:
+    # Print help information and exit:
+    print(err)  # will print something like "option -a not recognized"
+    print_help()
+    exit(2)
+
+if args_rubbish:
+    print("\nContains cmd line garbage:" + str(args_garbage) + "\n")
+    print_help()
+    exit(5)
+
+for opt, arg in opts:
+    if opt == "-h":
+        print_help()
+        exit(1)
+    elif opt == "-p":
+        options.pretty_print = "yes"
+    elif opt == "-o":
+        options.output_file = arg
+    elif opt == "-d":
+        try:
+            options.delay = int(arg)
+        except ValueError:
+            print("Integers Only!")
+            print_help()
+            exit(9)
+
+# Amount of time b/w ssh connection attempts.
+delay_time = options.delay
 
 hosts_and_ports = {}
 
@@ -96,6 +149,8 @@ lhost_pub_ip = json.loads(r.text)['ip']
 
 all_ssh_host_objs = []
 
+lhost = os.uname()[1]
+
 print("Trying SSH Connections...", end="", flush=True)
 
 for host in hosts_and_ports:
@@ -103,7 +158,7 @@ for host in hosts_and_ports:
     client.set_missing_host_key_policy(MissingHostKeyPolicy())
 
     new_host = SshHost()
-    new_host.lhostname = os.uname()[1]
+    new_host.lhostname = lhost
     new_host.rhostname = host
 
     new_host.lhost_pub_ip = lhost_pub_ip
@@ -129,8 +184,18 @@ for host in hosts_and_ports:
 
 print(".", flush=True)
 
+# Round out JSON output.
+data = []
+
 for host_obj in all_ssh_host_objs:
     if len(host_obj.users) > 0:
-#        print(host_obj)
-        host_obj_json = json.dumps(host_obj, indent=4, cls=SshHostEncoder)
-        print(host_obj_json)
+        if options.pretty_print == "yes":
+            print(host_obj)
+
+        data.append(host_obj)
+
+# Write json output to options.output_file.
+f = open(options.output_file, "w")
+f.write(json.dumps(data, indent=4, cls=SshHostEncoder))
+print("Results written to: " + options.output_file)
+f.close()
