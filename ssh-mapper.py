@@ -2,6 +2,7 @@
 # This script helps enumerate ssh key networks. It does so by trying to log
 # into each of the hosts in the `ssh-hosts.txt` file as each of the users in
 # the `ssh-users.txt` file.
+# Written by, John R., Dec. 2022
 
 import os
 import sys
@@ -18,16 +19,16 @@ class SshHost:
         self.lhostname = ""
         self.rhostname = ""
         self.lhost_pub_ip = ""
-        self.ssh_port = ""
+        self.ssh_port = 22
         self.users = []
 
     def __str__(self):
         str_repr = "###### SSH Host Object ###### \n"
         str_repr += "Local Host: " + self.lhostname + "\n"
         str_repr += "Remote Host: " + self.rhostname + "\n"
+        str_repr += "Local Public IP: " + self.lhost_pub_ip + "\n"
         str_repr += "SSH Port: " + str(self.ssh_port) + "\n"
         str_repr += "Valid Users(s): " + str(self.users) + "\n"
-        str_repr += "Local Public IP: " + self.lhost_pub_ip + "\n"
         return str_repr
 
 # Make SshHost class JSON serializable.
@@ -35,9 +36,11 @@ class SshHostEncoder(json.JSONEncoder):
     def default(self, o):
         return o.__dict__
 
+# Class to hold optional arguments.
 class Options:
     def __init__(self):
         self.pretty_print = ""
+        self.raw = ""
         self.output_file = "ssh-map.json"
         self.delay = .5
 
@@ -60,7 +63,8 @@ def print_help():
            ssh-mapper.py [options]
 
      -h                    print this help menu
-     -p                    print output as well
+     -p                    print output plain text
+     -r                    print output as raw json (mutes ticker)
      -o <file_name>        write to file, defaults to `ssh-map.json`
      -d <delay>            delay seconds between ssh attempts
 
@@ -69,7 +73,7 @@ def print_help():
 options = Options()
 
 try:
-    opts, args_rubbish = getopt.getopt(sys.argv[1:], "hpo:d:")
+    opts, args_rubbish = getopt.getopt(sys.argv[1:], "hpro:d:")
 except getopt.GetoptError as err:
     # Print help information and exit:
     print(err)  # will print something like "option -a not recognized"
@@ -87,6 +91,8 @@ for opt, arg in opts:
         exit(1)
     elif opt == "-p":
         options.pretty_print = "yes"
+    elif opt == "-r":
+        options.raw = "yes"
     elif opt == "-o":
         options.output_file = arg
     elif opt == "-d":
@@ -151,7 +157,9 @@ all_ssh_host_objs = []
 
 lhost = os.uname()[1]
 
-print("Trying SSH Connections...", end="", flush=True)
+# Don't output ticker in raw json mode.
+if options.raw != "yes":
+    print("Trying SSH Connections...", end="", flush=True)
 
 for host in hosts_and_ports:
     client = SSHClient()
@@ -162,16 +170,18 @@ for host in hosts_and_ports:
     new_host.rhostname = host
 
     new_host.lhost_pub_ip = lhost_pub_ip
-    new_host.ssh_port = hosts_and_ports[host]
+    new_host.ssh_port = int(hosts_and_ports[host])
 
     valid_users = []
 
     for user in potential_users:
-        print(".", end="", flush=True)
+        if options.raw != "yes":
+            print(".", end="", flush=True)
 
         time.sleep(delay_time)
         try:
-            client.connect(new_host.rhostname, port=new_host.ssh_port, username=user, look_for_keys=True)
+            client.connect(new_host.rhostname, port=new_host.ssh_port,
+                username=user, look_for_keys=True)
             valid_users.append(user)
         except Exception as e:
             pass
@@ -182,9 +192,10 @@ for host in hosts_and_ports:
 
     client.close()
 
-print(".", flush=True)
+if options.raw != "yes":
+    print(".", flush=True)
 
-# Round out JSON output.
+# Is place for data.
 data = []
 
 for host_obj in all_ssh_host_objs:
@@ -196,6 +207,11 @@ for host_obj in all_ssh_host_objs:
 
 # Write json output to options.output_file.
 f = open(options.output_file, "w")
-f.write(json.dumps(data, indent=4, cls=SshHostEncoder))
-print("Results written to: " + options.output_file)
+json_data = json.dumps(data, indent=4, cls=SshHostEncoder)
+f.write(json_data)
 f.close()
+
+if options.raw == "yes":
+    print(json_data)
+else:
+    print("Results written to: " + options.output_file)
