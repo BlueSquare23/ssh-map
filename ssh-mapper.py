@@ -56,10 +56,9 @@ def print_help():
      -r                    print output as raw json (mutes ticker)
      -o <file_name>        write to file, defaults to `ssh-map.json`
      -d <delay>            delay seconds between ssh attempts
-
     """)
 
-if __name__ == '__main__':
+def main():
 
     options = Options()
 
@@ -207,3 +206,5 @@ if __name__ == '__main__':
     else:
         print("Results written to: " + options.output_file)
 
+if __name__ == '__main__':
+    main()

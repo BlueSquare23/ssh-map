@@ -16,7 +16,6 @@ def check_for_file(filename):
     except OSError:
         print(f"No file: {filename}")
         exit(4)
-
     return
 
 def create_connection(db_file):
@@ -31,7 +30,6 @@ def create_connection(db_file):
         return conn
     except Error as e:
         print(e)
-
     return conn
 
 def create_table(conn, create_table_sql):
@@ -49,11 +47,12 @@ def create_table(conn, create_table_sql):
 def create_row(conn, values):
     """
     Create a new row in the ssh_map table
-    :param conn:
-    :param ssh_entry:
-    :return: project id
+    Rows have compound keys lhost,rhost
+    :param conn: The Connection object
+    :param values: The ssh obj values
+    :return: row id
     """
-    sql = ''' INSERT INTO ssh_map(lhost,lhost_pub_ip,rhost,users)
+    sql = ''' INSERT OR IGNORE INTO ssh_map(lhost,lhost_pub_ip,rhost,users)
               VALUES(?,?,?,?) '''
     cur = conn.cursor()
     cur.execute(sql, values)
@@ -63,28 +62,28 @@ def create_row(conn, values):
 def select_all_rows(conn):
     """
     Query all rows in the ssh_map table
-    :param conn: the Connection object
+    :param conn: The Connection object
     :return:
     """
     cur = conn.cursor()
     sql = 'SELECT * FROM ssh_map'
     cur.execute(sql)
 
-
     rows = cur.fetchall()
+    return len(rows)
 
-    for row in rows:
-        ssh_map_id = row[0]
-        user = row[1]
-        ssh_map = row[2]
-        ssh_map = f"{ssh_map}"
-        print(ssh_map)
+#    for row in rows:
+#        ssh_map_id = row[0]
+#        user = row[1]
+#        ssh_map = row[2]
+#        ssh_map = f"{ssh_map}"
+#        print(ssh_map)
 
 def delete_row(conn, id):
     """
     Delete a ssh_map by id
-    :param conn:  Connection to the SQLite database
-    :param id: id of the ssh_map
+    :param conn: Connection to the SQLite database
+    :param id: Compound key of the ssh_map entry
     :return:
     """
     sql = 'DELETE FROM ssh_map WHERE id=?'
