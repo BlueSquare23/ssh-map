@@ -40,7 +40,7 @@ Trying SSH Connections...................
 Results written to: ssh-map.json
 ```
 
-From there you can use the `injest-data.py` script to slurp the json into
+From there you can use the `ingest-data.py` script to slurp the json into
 an SQLite db.
 
 Tip: You can use a tool like the [sqlite3 cli](https://sqlite.org/cli.html) to
