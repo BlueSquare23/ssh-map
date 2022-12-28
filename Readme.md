@@ -5,6 +5,15 @@ This script is meant to help map (enumerate) ssh key networks.
 The main `ssh-mapper.py` script will go through and try to ssh to the hosts in
 the `ssh-hosts.txt` file as each of the users in the `ssh-users.txt` file.
 
+## Data Visualization
+
+![Visualization](ssh-map.png)
+
+I'm using a site called flourish.studio to do the actual network graphing 
+/ data visualization for this project.
+
+[Interactive Version](https://public.flourish.studio/visualisation/12290183/)
+
 ## Txt Files
 
 The `ssh-hosts.txt` should be formatted host:port as per convention, one entry
@@ -30,9 +39,13 @@ user3
 
 ## Intended Usage
 
+1. Enumerate the Network
+
 There are a few simple parts to this package. First, there's the main
 `ssh-mapper.py` script. After you've created the text files for your use case
-run `ssh-mapper.py` to generate a `ssh-map.json` file.
+run `ssh-mapper.py` to generate a `ssh-map.json` file for a given machine. 
+Rinse and repeat on all other hosts on your network to generate a whole set 
+of json files.
 
 ```
 > ./ssh-mapper.py
@@ -40,8 +53,10 @@ Trying SSH Connections...................
 Results written to: ssh-map.json
 ```
 
+2. Collect the Data
+
 From there you can use the `ingest-data.py` script to slurp the json into
-an SQLite db.
+a central SQLite db.
 
 Tip: You can use a tool like the [sqlite3 cli](https://sqlite.org/cli.html) to
 quickly query the DB on the fly.
@@ -57,9 +72,14 @@ quickly query the DB on the fly.
 └─────────┴────────────────┴──────────────┴────────────────────┘
 ```
 
-## Goals
+3. Visualize the Data
 
-The plan is to then use that data to actually map out connections b/w nodes on
-an ssh network. This might be a proper visual map (I figure there gotta be node
-graphing packages for python, matplotlib maybe?). But also it might just end up
-being a loose ascii representation of a 'map' idk. Haven't gotten that far yet.
+Finally, when you're ready to visualize your ssh network you can just export the 
+database as a csv file and then upload the csv file to flourish using my 
+networking graph template to create an interactive ssh key network map.
+
+```
+sqlite3 ssh-map.db '.mode csv' 'select * from ssh_map;' > ssh-map.csv
+```
+
+Create a flourish account here: https://flourish.studio/
