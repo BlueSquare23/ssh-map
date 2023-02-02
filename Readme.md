@@ -1,13 +1,16 @@
 # SSH Mapper
 
-This script is meant to help map (enumerate) ssh key networks.
+This script is meant to help map (enumerate) ssh key networks. By ssh key
+network, I specifically mean a network of machines connected by passwordless,
+ssh-key only authentication. This script will not provide any information about
+machines that use password only or require password & key authentication.
 
 The main `ssh-mapper.py` script will go through and try to ssh to the hosts in
 the `ssh-hosts.txt` file as each of the users in the `ssh-users.txt` file.
 
 ## Data Visualization
 
-![Visualization](ssh-map.png)
+[![Visualization](ssh-map.png)](https://public.flourish.studio/visualisation/12290183/)
 
 I'm using a site called flourish.studio to do the actual network graphing 
 / data visualization for this project.
@@ -74,12 +77,25 @@ quickly query the DB on the fly.
 
 3. Visualize the Data
 
-Finally, when you're ready to visualize your ssh network you can just export the 
-database as a csv file and then upload the csv file to flourish using my 
-networking graph template to create an interactive ssh key network map.
+Finally, when you're ready to visualize your ssh network you can just export
+the database as a csv file and then upload the csv file to flourish using my
+networking graph template (linked above) to create an interactive ssh key
+network map.
 
 ```
 sqlite3 ssh-map.db '.mode csv' 'select * from ssh_map;' > ssh-map.csv
 ```
 
 Create a flourish account here: https://flourish.studio/
+
+## Final Notes on Security & Utility
+
+The purpose of these tools is to help an administrator or junior pentester map
+out their SSH key only auth network(s) in order to identify weak linkages or
+bad points of contact. Please do not use for any un-authorized purposes or
+against machines which you do not control or have concent to test on!
+
+Likewise, to the operator; Knowledge is power! __The json file(s) and sqlite
+database used in this project, as well as the final data visulization should
+all be kept PRIVATE!!! Otherwise you might give out vital information that
+could compromise your networks security!__
