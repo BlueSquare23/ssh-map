@@ -63,14 +63,14 @@ def main():
     options = Options()
 
     try:
-        opts, args_rubbish = getopt.getopt(sys.argv[1:], "hpro:d:")
+        opts, args_garbage = getopt.getopt(sys.argv[1:], "hpro:d:")
     except getopt.GetoptError as err:
         # Print help information and exit:
         print(err)  # will print something like "option -a not recognized"
         print_help()
         exit(2)
 
-    if args_rubbish:
+    if args_garbage:
         print("\nContains cmd line garbage:" + str(args_garbage) + "\n")
         print_help()
         exit(5)
